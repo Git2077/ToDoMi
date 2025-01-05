@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function enableSensors() {
         let isRecording = false;
         let isStanding = false;
-        let recordings = [];
+        let sensorData = [];  // Array für Sensordaten
         let startTime = null;
         let graphUpdateInterval;
 
@@ -105,20 +105,92 @@ document.addEventListener('DOMContentLoaded', () => {
         const canvas = document.getElementById('sensorGraph');
         const ctx = canvas.getContext('2d');
 
+        // Bewegungserkennung basierend auf Orientierung
+        function detectStandingByOrientation(data, windowSize = 20) {
+            const predictions = [];
+            
+            for (let i = 0; i < data.length; i++) {
+                // Bestimme das Fenster
+                const start = Math.max(0, i - Math.floor(windowSize / 2));
+                const end = Math.min(data.length, i + Math.floor(windowSize / 2));
+                const window = data.slice(start, end);
+                
+                // Berechne Durchschnittswerte für X und Y
+                const avgX = window.reduce((sum, d) => sum + d.gravity.x, 0) / window.length;
+                const avgY = window.reduce((sum, d) => sum + d.gravity.y, 0) / window.length;
+                
+                // Klassifizierung:
+                // - Stehen: Y-Werte höher, X-Werte niedriger
+                // - Sitzen: Y-Werte niedriger, X-Werte höher
+                const isStanding = avgY > 6.0 && avgX < 5.0;
+                predictions.push(isStanding);
+            }
+            
+            return predictions;
+        }
+
+        function processMotion(event) {
+            if (!isRecording) return;
+
+            const timestamp = Date.now();
+            const gravity = event.accelerationIncludingGravity;
+            const rotation = event.rotationRate;
+            
+            // Füge neue Daten hinzu
+            sensorData.push({
+                timestamp: timestamp,
+                gravity: {
+                    x: gravity.x,
+                    y: gravity.y,
+                    z: gravity.z
+                },
+                rotation: {
+                    alpha: rotation.alpha,
+                    beta: rotation.beta,
+                    gamma: rotation.gamma
+                }
+            });
+
+            // Wende die neue Erkennungsmethode an
+            if (sensorData.length >= 20) { // Mindestens Fenstergröße
+                const predictions = detectStandingByOrientation(sensorData);
+                const currentPrediction = predictions[predictions.length - 1];
+                
+                // Aktualisiere UI
+                document.getElementById('standingStatus').textContent = 
+                    currentPrediction ? 'Stehend' : 'Sitzend';
+                
+                // Speichere Vorhersage im letzten Datenpunkt
+                sensorData[sensorData.length - 1].isStanding = currentPrediction;
+                
+                // Aktualisiere Display
+                updateDisplay(sensorData[sensorData.length - 1]);
+            }
+
+            // Beschränke die Datenmenge
+            if (sensorData.length > 100) {
+                sensorData = sensorData.slice(-100);
+            }
+        }
+
         startBtn.addEventListener('click', () => {
             if (!isRecording) {
                 // Aufzeichnung starten
                 isRecording = true;
                 startTime = Date.now();
-                recordings = [];
+                sensorData = [];  // Zurücksetzen der Sensordaten
                 startBtn.textContent = 'Aufzeichnung stoppen';
-                updateGraph();
+                
+                // Event Listener für Bewegungssensor
+                window.addEventListener('devicemotion', processMotion);
+                
             } else {
-                // Aufzeichnung stoppen und speichern
+                // Aufzeichnung stoppen
                 isRecording = false;
                 startBtn.textContent = 'Aufzeichnung starten';
-                saveRecordings(recordings);
-                clearInterval(graphUpdateInterval);
+                
+                // Event Listener entfernen
+                window.removeEventListener('devicemotion', processMotion);
             }
         });
 
@@ -277,66 +349,5 @@ document.addEventListener('DOMContentLoaded', () => {
         // X-Achse: Zeit
         // Y-Achse: verschiedene Sensordaten
         // Farbige Markierung der Steh/Sitz-Phasen
-    }
-
-    // Bewegungserkennung basierend auf Orientierung
-    function detectStandingByOrientation(data, windowSize = 20) {
-        const predictions = [];
-        
-        for (let i = 0; i < data.length; i++) {
-            // Bestimme das Fenster
-            const start = Math.max(0, i - Math.floor(windowSize / 2));
-            const end = Math.min(data.length, i + Math.floor(windowSize / 2));
-            const window = data.slice(start, end);
-            
-            // Berechne Durchschnittswerte für X und Y
-            const avgX = window.reduce((sum, d) => sum + d.gravity.x, 0) / window.length;
-            const avgY = window.reduce((sum, d) => sum + d.gravity.y, 0) / window.length;
-            
-            // Klassifizierung:
-            // - Stehen: Y-Werte höher, X-Werte niedriger
-            // - Sitzen: Y-Werte niedriger, X-Werte höher
-            const isStanding = avgY > 6.0 && avgX < 5.0;
-            predictions.push(isStanding);
-        }
-        
-        return predictions;
-    }
-
-    // Aktualisiere die Bewegungserkennung in der processMotion Funktion
-    function processMotion(event) {
-        if (!isRecording) return;
-
-        const timestamp = Date.now();
-        const gravity = event.accelerationIncludingGravity;
-        const rotation = {
-            alpha: event.rotationRate.alpha,
-            beta: event.rotationRate.beta,
-            gamma: event.rotationRate.gamma
-        };
-        
-        // Füge neue Daten hinzu
-        sensorData.push({
-            timestamp: timestamp,
-            gravity: {
-                x: gravity.x,
-                y: gravity.y,
-                z: gravity.z
-            },
-            rotation: rotation
-        });
-
-        // Wende die neue Erkennungsmethode an
-        if (sensorData.length >= 20) { // Mindestens Fenstergröße
-            const predictions = detectStandingByOrientation(sensorData);
-            const currentPrediction = predictions[predictions.length - 1];
-            
-            // Aktualisiere UI
-            document.getElementById('standingStatus').textContent = 
-                currentPrediction ? 'Stehend' : 'Sitzend';
-            
-            // Speichere Vorhersage
-            sensorData[sensorData.length - 1].isStanding = currentPrediction;
-        }
     }
 });
