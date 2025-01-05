@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ToDo Mini</title>
+    <title>SitZZähler</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4CAF50">
@@ -17,24 +17,16 @@
 </head>
 <body>
     <div class="container">
-        <h1>ToDo Mini</h1>
+        <h1>SitZZähler</h1>
         <div id="sensorStatus" class="sensor-status">
             <h2>Aktivitäts-Tracker</h2>
             <div class="recording-controls">
                 <button id="startRecording">Aufzeichnung starten</button>
-                <button id="togglePosition">Position: Sitzend</button>
                 <span id="recordingTime">00:00</span>
             </div>
             <canvas id="sensorGraph" width="500" height="200"></canvas>
             <div class="sensor-values"></div>
         </div>
-        <div class="todo-input">
-            <input type="text" id="todoInput" placeholder="Neue Aufgabe...">
-            <button id="addTodo">+</button>
-        </div>
-        <ul id="todoList" class="todo-list">
-            <!-- Todos werden hier dynamisch eingefügt -->
-        </ul>
         <div class="status-container">
             <h2>Erkannter Status: <span id="standingStatus">-</span></h2>
         </div>

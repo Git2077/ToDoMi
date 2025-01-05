@@ -1,22 +1,20 @@
 // Name des Cache-Speichers - wird für Versionierung verwendet
 // Bei Änderungen der Version werden alte Caches gelöscht
-const CACHE_NAME = 'todomi-v1';
+const CACHE_NAME = 'sitzzaehler-v1';
 
 // Liste aller Dateien, die für die Offline-Funktionalität gecacht werden sollen
 // Diese Dateien werden beim Installieren des Service Workers heruntergeladen
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './css/style.css',
-  './js/app.js',
-  './js/sw-register.js',
-  './js/sw.js',
-  './manifest.json',
-  './favicon.ico',
-  './icons/favicon-16x16.png',
-  './icons/favicon-32x32.png',
-  './icons/icon-192x192.png',
-  './icons/icon-512x512.png'
+const ASSETS = [
+  '/',
+  '/index.html',
+  '/css/style.css',
+  '/js/app.js',
+  '/manifest.json',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/icons/favicon-16x16.png',
+  '/icons/favicon-32x32.png',
+  '/favicon.ico'
 ];
 
 // INSTALLATION
@@ -30,7 +28,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         // Füge alle definierten Dateien zum Cache hinzu
-        return cache.addAll(ASSETS_TO_CACHE)
+        return cache.addAll(ASSETS)
       })
   );
 });
