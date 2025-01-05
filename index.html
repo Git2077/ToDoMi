@@ -2,9 +2,31 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>ToDoMi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDo Mini</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
-    <h1>ToDo Mini</h1>
+    <div class="container">
+        <h1>ToDo Mini</h1>
+        <div class="todo-input">
+            <input type="text" id="todoInput" placeholder="Neue Aufgabe...">
+            <button id="addTodo">+</button>
+        </div>
+        <ul id="todoList" class="todo-list">
+            <!-- Todos werden hier dynamisch eingefügt -->
+        </ul>
+    </div>
+    <script src="js/app.js"></script>
+    <script src="js/sw-register.js"></script>
 </body>
 </html>
