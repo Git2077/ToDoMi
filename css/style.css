@@ -100,3 +100,16 @@ button:hover {
     transform: rotate(var(--tilt-angle));
     transition: transform 0.3s ease;
 }
+
+.activity-stats {
+    display: grid;
+    gap: 1rem;
+}
+
+.activity-stats p {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background: #f5f5f5;
+    border-radius: 4px;
+}

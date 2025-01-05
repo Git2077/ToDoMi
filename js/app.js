@@ -93,39 +93,104 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function enableSensors() {
-        window.addEventListener('deviceorientation', (event) => {
-            // Werte auslesen
-            const compass = Math.round(event.alpha);  // Kompass
-            const tilt = Math.round(event.beta);      // Neigung vor/zurück
-            const roll = Math.round(event.gamma);     // Neigung links/rechts
-
-            // Werte anzeigen
-            const sensorStatus = document.getElementById('sensorStatus');
-            sensorStatus.innerHTML = `
-                <p>Kompass: ${compass}°</p>
-                <p>Neigung vor/zurück: ${tilt}°</p>
-                <p>Neigung links/rechts: ${roll}°</p>
-            `;
-
-            // Liste neigen (basierend auf Seitenneigung)
-            const todoList = document.getElementById('todoList');
-            todoList.style.setProperty('--tilt-angle', `${roll/5}deg`);
-            todoList.classList.add('tilted');
-        });
+        let isStanding = false;
+        let standingTime = 0;
+        let sittingTime = 0;
+        let lastUpdate = Date.now();
+        let readings = []; // Sammeln mehrerer Messungen
 
         window.addEventListener('devicemotion', (event) => {
-            // Optional: Bewegungsdaten anzeigen
-            const motionData = `
-                <p>Bewegung X: ${Math.round(event.acceleration.x || 0)} m/s²</p>
-                <p>Bewegung Y: ${Math.round(event.acceleration.y || 0)} m/s²</p>
-                <p>Bewegung Z: ${Math.round(event.acceleration.z || 0)} m/s²</p>
-            `;
+            const { x, y, z } = event.accelerationIncludingGravity;
+            const now = Date.now();
+            const timeDiff = now - lastUpdate;
             
-            // Bewegungsdaten an bestehende Anzeige anhängen
-            document.getElementById('sensorStatus').innerHTML += motionData;
+            // Mehrere Messungen sammeln (Puffer von 10 Werten)
+            readings.push({ x, y, z });
+            if (readings.length > 10) readings.shift();
+            
+            // Position bestimmen durch Analyse mehrerer Messungen
+            const position = determinePosition(readings);
+            
+            if (position !== isStanding) {
+                isStanding = position;
+                console.log('Position changed:', isStanding ? 'Stehend' : 'Sitzend');
+            }
+
+            // Zeit aktualisieren
+            if (isStanding) {
+                standingTime += timeDiff;
+            } else {
+                sittingTime += timeDiff;
+            }
+            
+            lastUpdate = now;
+            
+            // Anzeige aktualisieren
+            updateDisplay(isStanding, standingTime, sittingTime, { x, y, z });
         });
+    }
+
+    function determinePosition(readings) {
+        // Durchschnittswerte berechnen
+        const avg = readings.reduce((acc, val) => {
+            return {
+                x: acc.x + val.x,
+                y: acc.y + val.y,
+                z: acc.z + val.z
+            };
+        }, { x: 0, y: 0, z: 0 });
+        
+        avg.x /= readings.length;
+        avg.y /= readings.length;
+        avg.z /= readings.length;
+
+        // Sitzen: Telefon meist horizontal (z ≈ 9.8)
+        // Stehen: Telefon meist vertikal in der Tasche (y ≈ 9.8)
+        const isStanding = Math.abs(avg.y) > 8;
+        
+        return isStanding;
+    }
+
+    function updateDisplay(isStanding, standingTime, sittingTime, acceleration) {
+        const sensorStatus = document.getElementById('sensorStatus');
+        sensorStatus.innerHTML = `
+            <h2>Aktivitäts-Tracker</h2>
+            <div class="activity-stats">
+                <p>Status: <span>${isStanding ? 'Stehend' : 'Sitzend'}</span></p>
+                <p>Stehzeit: <span>${formatTime(standingTime)}</span></p>
+                <p>Sitzzeit: <span>${formatTime(sittingTime)}</span></p>
+                <p class="debug">
+                    X: ${Math.round(acceleration.x)}<br>
+                    Y: ${Math.round(acceleration.y)}<br>
+                    Z: ${Math.round(acceleration.z)}
+                </p>
+            </div>
+        `;
+    }
+
+    // Zeit formatieren
+    function formatTime(ms) {
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
     }
 
     // Sensor-Initialisierung aufrufen
     initSensors();
+
+    // Zeiten im localStorage speichern
+    function saveActivityTimes(standing, sitting) {
+        const today = new Date().toISOString().split('T')[0];
+        const times = JSON.parse(localStorage.getItem('activityTimes') || '{}');
+        times[today] = { standing, sitting };
+        localStorage.setItem('activityTimes', JSON.stringify(times));
+    }
+
+    // Zeiten laden
+    function loadActivityTimes() {
+        const today = new Date().toISOString().split('T')[0];
+        const times = JSON.parse(localStorage.getItem('activityTimes') || '{}');
+        return times[today] || { standing: 0, sitting: 0 };
+    }
 });
