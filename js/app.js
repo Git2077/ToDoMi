@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addTodoBtn = document.getElementById('addTodo');
     const todoList = document.getElementById('todoList');
 
-    // Todos aus dem localStorage laden
+    // Lädt gespeicherte Todos oder erstellt leeres Array
     let todos = JSON.parse(localStorage.getItem('todos')) || [];
 
     // Todos anzeigen
@@ -70,4 +70,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial render
     renderTodos();
+
+    // Sensor-Funktionalität
+    function initSensors() {
+        // Prüfen ob Gerät Sensoren unterstützt
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            // iOS 13+ erfordert Benutzerinteraktion für Sensor-Zugriff
+            document.body.addEventListener('click', async () => {
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') {
+                        enableSensors();
+                    }
+                } catch (error) {
+                    console.log('Sensor-Zugriff nicht erlaubt:', error);
+                }
+            }, { once: true });
+        } else {
+            // Direkter Zugriff für andere Geräte
+            enableSensors();
+        }
+    }
+
+    function enableSensors() {
+        window.addEventListener('deviceorientation', (event) => {
+            // Beta = Neigung vor/zurück
+            const tilt = Math.round(event.beta);
+            
+            // Wert anzeigen
+            document.getElementById('tiltValue').textContent = `${tilt}°`;
+            
+            // Liste neigen
+            const todoList = document.getElementById('todoList');
+            todoList.style.setProperty('--tilt-angle', `${tilt/10}deg`);
+            todoList.classList.add('tilted');
+        });
+    }
+
+    // Sensor-Initialisierung aufrufen
+    initSensors();
 });
