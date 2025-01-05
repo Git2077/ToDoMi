@@ -94,31 +94,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function enableSensors() {
         window.addEventListener('deviceorientation', (event) => {
-            // Alpha: Rotation um die Z-Achse (Kompass) 0° bis 360°
-            const compass = Math.round(event.alpha);
-            
-            // Beta: Neigung vor/zurück -180° bis 180°
-            const tilt = Math.round(event.beta);
-            
-            // Gamma: Neigung links/rechts -90° bis 90°
-            const roll = Math.round(event.gamma);
+            // Werte auslesen
+            const compass = Math.round(event.alpha);  // Kompass
+            const tilt = Math.round(event.beta);      // Neigung vor/zurück
+            const roll = Math.round(event.gamma);     // Neigung links/rechts
+
+            // Werte anzeigen
+            const sensorStatus = document.getElementById('sensorStatus');
+            sensorStatus.innerHTML = `
+                <p>Kompass: ${compass}°</p>
+                <p>Neigung vor/zurück: ${tilt}°</p>
+                <p>Neigung links/rechts: ${roll}°</p>
+            `;
+
+            // Liste neigen (basierend auf Seitenneigung)
+            const todoList = document.getElementById('todoList');
+            todoList.style.setProperty('--tilt-angle', `${roll/5}deg`);
+            todoList.classList.add('tilted');
         });
 
         window.addEventListener('devicemotion', (event) => {
-            // Beschleunigung (m/s²)
-            const x = event.acceleration.x;  // links/rechts
-            const y = event.acceleration.y;  // vor/zurück
-            const z = event.acceleration.z;  // hoch/runter
+            // Optional: Bewegungsdaten anzeigen
+            const motionData = `
+                <p>Bewegung X: ${Math.round(event.acceleration.x || 0)} m/s²</p>
+                <p>Bewegung Y: ${Math.round(event.acceleration.y || 0)} m/s²</p>
+                <p>Bewegung Z: ${Math.round(event.acceleration.z || 0)} m/s²</p>
+            `;
             
-            // Beschleunigung inkl. Schwerkraft
-            const gx = event.accelerationIncludingGravity.x;
-            const gy = event.accelerationIncludingGravity.y;
-            const gz = event.accelerationIncludingGravity.z;
-            
-            // Rotationsrate (°/s)
-            const rotAlpha = event.rotationRate.alpha;  // um Z-Achse
-            const rotBeta = event.rotationRate.beta;    // um X-Achse
-            const rotGamma = event.rotationRate.gamma;  // um Y-Achse
+            // Bewegungsdaten an bestehende Anzeige anhängen
+            document.getElementById('sensorStatus').innerHTML += motionData;
         });
     }
 
