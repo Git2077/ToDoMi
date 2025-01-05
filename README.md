@@ -9,4 +9,4 @@ Eine einfache Todo-Liste als Progressive Web App (PWA).
 - Responsive Design
 
 ## Live Demo
-Die App ist verfügbar unter: https://[IHR-USERNAME].github.io/ToDoMi/
+Die App ist verfügbar unter: https://git2077.github.io/ToDoMi/
