@@ -48,10 +48,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.length < windowSize) return false;
             
             const window = data.slice(-windowSize);
-            const avgX = window.reduce((sum, d) => sum + d.gravity.x, 0) / windowSize;
-            const avgY = window.reduce((sum, d) => sum + d.gravity.y, 0) / windowSize;
+            const avgX = window.reduce((sum, d) => sum + Math.abs(d.gravity.x), 0) / windowSize;
+            const avgY = window.reduce((sum, d) => sum + Math.abs(d.gravity.y), 0) / windowSize;
             
-            return avgY > 6.0 && avgX < 5.0;
+            return Math.abs(avgY) > 6.0 && Math.abs(avgX) < 5.0;
         }
 
         function handleMotion(event) {
