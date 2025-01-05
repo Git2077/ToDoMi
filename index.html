@@ -20,9 +20,13 @@
         <h1>ToDo Mini</h1>
         <div id="sensorStatus" class="sensor-status">
             <h2>Aktivitäts-Tracker</h2>
-            <div class="activity-stats">
-                <!-- Wird dynamisch gefüllt -->
+            <div class="recording-controls">
+                <button id="startRecording">Aufzeichnung starten</button>
+                <button id="togglePosition">Position: Sitzend</button>
+                <span id="recordingTime">00:00</span>
             </div>
+            <canvas id="sensorGraph" width="500" height="200"></canvas>
+            <div class="sensor-values"></div>
         </div>
         <div class="todo-input">
             <input type="text" id="todoInput" placeholder="Neue Aufgabe...">

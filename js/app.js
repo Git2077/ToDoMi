@@ -93,41 +93,108 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function enableSensors() {
+        let isRecording = false;
         let isStanding = false;
-        let standingTime = 0;
-        let sittingTime = 0;
-        let lastUpdate = Date.now();
-        let readings = []; // Sammeln mehrerer Messungen
+        let recordings = [];
+        let startTime = null;
+        let graphUpdateInterval;
+
+        const startBtn = document.getElementById('startRecording');
+        const toggleBtn = document.getElementById('togglePosition');
+        const timeDisplay = document.getElementById('recordingTime');
+        const canvas = document.getElementById('sensorGraph');
+        const ctx = canvas.getContext('2d');
+
+        startBtn.addEventListener('click', () => {
+            if (!isRecording) {
+                // Aufzeichnung starten
+                isRecording = true;
+                startTime = Date.now();
+                recordings = [];
+                startBtn.textContent = 'Aufzeichnung stoppen';
+                updateGraph();
+            } else {
+                // Aufzeichnung stoppen und speichern
+                isRecording = false;
+                startBtn.textContent = 'Aufzeichnung starten';
+                saveRecordings(recordings);
+                clearInterval(graphUpdateInterval);
+            }
+        });
+
+        toggleBtn.addEventListener('click', () => {
+            isStanding = !isStanding;
+            toggleBtn.textContent = `Position: ${isStanding ? 'Stehend' : 'Sitzend'}`;
+        });
 
         window.addEventListener('devicemotion', (event) => {
-            const { x, y, z } = event.accelerationIncludingGravity;
-            const now = Date.now();
-            const timeDiff = now - lastUpdate;
-            
-            // Mehrere Messungen sammeln (Puffer von 10 Werten)
-            readings.push({ x, y, z });
-            if (readings.length > 10) readings.shift();
-            
-            // Position bestimmen durch Analyse mehrerer Messungen
-            const position = determinePosition(readings);
-            
-            if (position !== isStanding) {
-                isStanding = position;
-                console.log('Position changed:', isStanding ? 'Stehend' : 'Sitzend');
-            }
+            if (!isRecording) return;
 
-            // Zeit aktualisieren
-            if (isStanding) {
-                standingTime += timeDiff;
-            } else {
-                sittingTime += timeDiff;
-            }
-            
-            lastUpdate = now;
-            
-            // Anzeige aktualisieren
-            updateDisplay(isStanding, standingTime, sittingTime, { x, y, z });
+            const data = {
+                timestamp: Date.now(),
+                gravity: {
+                    x: event.accelerationIncludingGravity.x,
+                    y: event.accelerationIncludingGravity.y,
+                    z: event.accelerationIncludingGravity.z
+                },
+                acceleration: {
+                    x: event.acceleration.x,
+                    y: event.acceleration.y,
+                    z: event.acceleration.z
+                },
+                rotation: {
+                    alpha: event.rotationRate.alpha,
+                    beta: event.rotationRate.beta,
+                    gamma: event.rotationRate.gamma
+                },
+                isStanding
+            };
+
+            recordings.push(data);
+            updateDisplay(data);
         });
+
+        function updateGraph() {
+            graphUpdateInterval = setInterval(() => {
+                if (!recordings.length) return;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Letzte 100 Messungen anzeigen
+                const displayData = recordings.slice(-100);
+                
+                // Zeichne Beschleunigungsdaten
+                ctx.beginPath();
+                ctx.strokeStyle = '#4CAF50';
+                displayData.forEach((data, i) => {
+                    const x = (i / 100) * canvas.width;
+                    const y = canvas.height - (data.gravity.y + 10) * 10;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                // Zeitanzeige aktualisieren
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                timeDisplay.textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 100);
+        }
+    }
+
+    function saveRecordings(data) {
+        const filename = `sensor_data_${new Date().toISOString()}.json`;
+        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        
+        URL.revokeObjectURL(url);
     }
 
     function determinePosition(readings) {
@@ -151,19 +218,26 @@ document.addEventListener('DOMContentLoaded', () => {
         return isStanding;
     }
 
-    function updateDisplay(isStanding, standingTime, sittingTime, acceleration) {
-        const sensorStatus = document.getElementById('sensorStatus');
-        sensorStatus.innerHTML = `
-            <h2>Aktivitäts-Tracker</h2>
-            <div class="activity-stats">
-                <p>Status: <span>${isStanding ? 'Stehend' : 'Sitzend'}</span></p>
-                <p>Stehzeit: <span>${formatTime(standingTime)}</span></p>
-                <p>Sitzzeit: <span>${formatTime(sittingTime)}</span></p>
-                <p class="debug">
-                    X: ${Math.round(acceleration.x)}<br>
-                    Y: ${Math.round(acceleration.y)}<br>
-                    Z: ${Math.round(acceleration.z)}
-                </p>
+    function updateDisplay(data) {
+        const sensorValues = document.querySelector('.sensor-values');
+        sensorValues.innerHTML = `
+            <div>
+                <strong>Schwerkraft:</strong><br>
+                X: ${Math.round(data.gravity.x || 0)}<br>
+                Y: ${Math.round(data.gravity.y || 0)}<br>
+                Z: ${Math.round(data.gravity.z || 0)}
+            </div>
+            <div>
+                <strong>Beschleunigung:</strong><br>
+                X: ${Math.round(data.acceleration.x || 0)}<br>
+                Y: ${Math.round(data.acceleration.y || 0)}<br>
+                Z: ${Math.round(data.acceleration.z || 0)}
+            </div>
+            <div>
+                <strong>Rotation:</strong><br>
+                α: ${Math.round(data.rotation.alpha || 0)}°<br>
+                β: ${Math.round(data.rotation.beta || 0)}°<br>
+                γ: ${Math.round(data.rotation.gamma || 0)}°
             </div>
         `;
     }
@@ -192,5 +266,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const today = new Date().toISOString().split('T')[0];
         const times = JSON.parse(localStorage.getItem('activityTimes') || '{}');
         return times[today] || { standing: 0, sitting: 0 };
+    }
+
+    function visualizeData(recordings) {
+        const sensorStatus = document.getElementById('sensorStatus');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Hier könnte man die Daten als Graph darstellen
+        // X-Achse: Zeit
+        // Y-Achse: verschiedene Sensordaten
+        // Farbige Markierung der Steh/Sitz-Phasen
     }
 });
