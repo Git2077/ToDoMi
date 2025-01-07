@@ -21,15 +21,17 @@
         <div class="status-container">
             <h2>Erkannte Position: <span id="standingStatus">-</span></h2>
             <div class="time-stats">
-                <p>Sitzend: <span id="sittingTime">00:00</span></p>
-                <p>Stehend: <span id="standingTime">00:00</span></p>
+                <p><strong>Sitzend:</strong> <span id="sittingTime">00:00</span><span class="time-unit">mm:ss</span></p>
+                <p><strong>Stehend:</strong> <span id="standingTime">00:00</span><span class="time-unit">mm:ss</span></p>
             </div>
         </div>
         <div id="sensorStatus" class="sensor-status">
             <div class="recording-controls">
-                <button id="startStopButton" class="primary-button">Start</button>
+                <button id="startStopButton" class="primary-button large-button">Start</button>
+            </div>
+            <hr class="divider">
+            <div class="debug-controls">
                 <button id="startRecording" class="debug-button">Debugging starten</button>
-                <span id="recordingTime">00:00</span>
             </div>
             <div class="sensor-values"></div>
         </div>

@@ -99,6 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function updateDisplay(data) {
             const sensorValues = document.querySelector('.sensor-values');
+            if (!isRecording) {
+                sensorValues.innerHTML = '';
+                return;
+            }
+            
             sensorValues.innerHTML = `
                 <div>
                     <strong>Schwerkraft:</strong><br>
