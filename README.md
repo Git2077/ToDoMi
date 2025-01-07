@@ -1,12 +1,13 @@
-# ToDoMi PWA
+# SitZZähler PWA
 
-Eine einfache Todo-Liste als Progressive Web App (PWA).
+Eine Progressive Web App (PWA) zum Tracken von Sitz- und Stehzeiten.
 
 ## Features
-- Todos hinzufügen und löschen
+- Erkennung von Sitz- und Stehpositionen
+- Zeitmessung für beide Positionen
 - Offline-Funktionalität
 - Installierbar als PWA
 - Responsive Design
 
-## Live Demo
-Die App ist verfügbar unter: https://git2077.github.io/ToDoMi/
+## Technische Details
+Die App nutzt die Device Motion API zur Positionserkennung.

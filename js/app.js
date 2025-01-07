@@ -169,5 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
     }
 
+    if (!window.DeviceMotionEvent) {
+        console.error('Device Motion API nicht verfügbar');
+        alert('Ihr Gerät unterstützt keine Bewegungssensoren');
+        return;
+    }
+
     initSensors();
 });

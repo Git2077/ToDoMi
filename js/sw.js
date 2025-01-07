@@ -4,17 +4,18 @@ const CACHE_NAME = 'sitzzaehler-v1';
 
 // Liste aller Dateien, die für die Offline-Funktionalität gecacht werden sollen
 // Diese Dateien werden beim Installieren des Service Workers heruntergeladen
+const BASE_PATH = location.pathname.replace(/\/[^/]*$/, '');
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/app.js',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/icons/favicon-16x16.png',
-  '/icons/favicon-32x32.png',
-  '/favicon.ico'
+  BASE_PATH + '/',
+  BASE_PATH + '/index.html',
+  BASE_PATH + '/css/style.css',
+  BASE_PATH + '/js/app.js',
+  BASE_PATH + '/manifest.json',
+  BASE_PATH + '/icons/icon-192x192.png',
+  BASE_PATH + '/icons/icon-512x512.png',
+  BASE_PATH + '/icons/favicon-16x16.png',
+  BASE_PATH + '/icons/favicon-32x32.png',
+  BASE_PATH + '/favicon.ico'
 ];
 
 // INSTALLATION

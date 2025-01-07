@@ -2,7 +2,7 @@
   "name": "SitZZähler",
   "short_name": "SitZZähler",
   "description": "Eine App zum Tracken von Sitz- und Stehzeiten",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4CAF50",
