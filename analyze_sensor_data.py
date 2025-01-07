@@ -6,13 +6,26 @@ import os
 import glob
 
 def load_dataset(filename):
-    with open(filename, 'r') as file:
-        data = json.load(file)
-        return {
-            'actual_position': data['actual_position'],
-            'detected_position': data['detected_position'],
-            'data': data['data']
-        }
+    try:
+        with open(filename, 'r') as file:
+            data = json.load(file)
+            if 'data' not in data:
+                print(f"Warnung: Keine Sensordaten in {filename} gefunden")
+                return None
+            
+            # Metadata aus Dateinamen extrahieren falls nicht in JSON
+            if 'actual_position' not in data:
+                position = filename.split('sensor_data_')[1].split('_2')[0]
+                data['actual_position'] = position
+                
+            return {
+                'actual_position': data['actual_position'],
+                'detected_position': data.get('detected_position', 'unknown'),
+                'data': data['data'] if isinstance(data['data'], list) else data['data']['data']
+            }
+    except Exception as e:
+        print(f"Fehler beim Laden von {filename}: {e}")
+        return None
 
 def analyze_multiple_datasets():
     # Finde alle sensor_data JSON Dateien im aktuellen Verzeichnis
