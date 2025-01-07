@@ -31,6 +31,18 @@ def analyze_multiple_datasets():
     plt.subplots_adjust(left=0.1, right=0.9, hspace=0.4)
 
     for idx, (position, data) in enumerate(datasets.items(), 1):
+        print(f"\nAnalyse für {position}:")
+        print(f"------------------------")
+        print(f"Gesamtdauer: {len(data['data'])/60:.1f} Sekunden")
+        
+        # Analysiere nur die "stabilen" Daten
+        patterns = analyze_patterns(data['data'], transition_time=5)
+        if patterns is None:
+            print("Zu wenig Daten für aussagekräftige Analyse")
+            continue
+            
+        print(f"Analysierte Dauer: {len(patterns['variance'])*100/60:.1f} Sekunden")
+        
         # Extrahiere Werte
         times = [(d['timestamp'] - data['data'][0]['timestamp'])/1000 for d in data['data']]
         gravity_x = [d['gravity']['x'] for d in data['data']]
@@ -49,7 +61,6 @@ def analyze_multiple_datasets():
         plt.legend()
 
         # Muster-Analyse
-        patterns = analyze_patterns(data['data'])
         print(f"\nAnalyse für {position}:")
         print(f"------------------------")
         print(f"Durchschnittliche Varianz X: {np.mean(patterns['variance'][0]):.2f}")
@@ -64,29 +75,46 @@ def analyze_multiple_datasets():
     suggest_detection_algorithm(datasets)
     plt.show()
 
-def analyze_patterns(data, window_size=100):
+def analyze_patterns(data, window_size=100, transition_time=5):
+    """
+    Analysiert die Sensordaten unter Ausschluss der Übergangszeiten am Anfang und Ende.
+    
+    Args:
+        data: Liste der Sensordaten
+        window_size: Größe des Analysefensters
+        transition_time: Zeit in Sekunden, die am Anfang/Ende ignoriert wird
+    """
+    # Berechne Samples die übersprungen werden sollen (bei 60Hz)
+    skip_samples = int(transition_time * 60)
+    
+    # Entferne die ersten und letzten n Sekunden
+    clean_data = data[skip_samples:-skip_samples]
+    
+    if len(clean_data) < window_size:
+        print("Warnung: Zu wenig Daten nach Entfernung der Übergangszeiten")
+        return None
+        
     patterns = {
-        'variance': [],      # Wie stark schwanken die Werte?
-        'frequency': [],     # Wie schnell ändern sich die Werte?
-        'orientation': [],   # Grundausrichtung des Geräts
-        'movement': []       # Bewegungsmuster (Gehen vs. Stillstand)
+        'variance': [],
+        'frequency': [],
+        'orientation': [],
+        'movement': []
     }
     
-    for i in range(0, len(data), window_size):
-        window = data[i:i+window_size]
-        
-        # Varianz der Bewegung
+    for i in range(0, len(clean_data), window_size):
+        window = clean_data[i:i+window_size]
+        if len(window) < window_size:
+            continue
+            
+        # Rest der Analyse wie gehabt...
         variance_x = np.var([d['gravity']['x'] for d in window])
         variance_y = np.var([d['gravity']['y'] for d in window])
         variance_z = np.var([d['gravity']['z'] for d in window])
         
-        # Frequenzanalyse (FFT)
         frequencies_x = np.fft.fft([d['gravity']['x'] for d in window])
         
-        # Durchschnittliche Orientierung
         mean_orientation = np.mean([d['gravity'] for d in window], axis=0)
         
-        # Bewegungserkennung (vereinfacht)
         movement = 'moving' if max(variance_x, variance_y, variance_z) > 0.1 else 'still'
         
         patterns['variance'].append([variance_x, variance_y, variance_z])
