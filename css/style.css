@@ -90,3 +90,19 @@ button:hover {
     margin-top: 2rem;
     padding-bottom: 1rem;
 }
+
+.primary-button {
+    background-color: #4CAF50;
+}
+
+.primary-button:hover {
+    background-color: #45a049;
+}
+
+.debug-button {
+    background-color: #f44336;
+}
+
+.debug-button:hover {
+    background-color: #d32f2f;
+}

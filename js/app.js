@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function enableSensors() {
         let isRecording = false;
+        let isMeasuring = false;
         let sensorData = [];
         let startTime = null;
         let timerInterval = null;
@@ -25,7 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let standingSeconds = 0;
         let lastUpdate = null;
 
-        const startBtn = document.getElementById('startRecording');
+        const startStopButton = document.getElementById('startStopButton');
+        const debugButton = document.getElementById('startRecording');
         const timeDisplay = document.getElementById('recordingTime');
 
         function updateTimer() {
@@ -47,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function handleMotion(event) {
-            if (!isRecording) return;
+            if (!isMeasuring) return;
 
             const timestamp = Date.now();
             lastUpdate = lastUpdate || timestamp;
@@ -71,18 +73,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
 
-            sensorData.push(data);
+            if (isRecording) {
+                sensorData.push(data);
+            }
 
             const isStanding = detectStandingByOrientation(sensorData);
             document.getElementById('standingStatus').textContent = 
                 isStanding ? 'Stehend' : 'Sitzend';
 
             updateDisplay(data);
-
-            if (sensorData.length > 100) {
-                sensorData = sensorData.slice(-100);
-            }
-
             updatePositionTimes();
         }
 
@@ -129,26 +128,30 @@ document.addEventListener('DOMContentLoaded', () => {
             return `${mins}:${secs}`;
         }
 
-        startBtn.addEventListener('click', () => {
-            if (!isRecording) {
-                isRecording = true;
+        startStopButton.addEventListener('click', () => {
+            isMeasuring = !isMeasuring;
+            startStopButton.textContent = isMeasuring ? 'Stop' : 'Start';
+            
+            if (isMeasuring) {
                 startTime = Date.now();
-                lastUpdate = startTime;
-                sensorData = [];
-                sittingSeconds = 0;
-                standingSeconds = 0;
-                startBtn.textContent = 'Aufzeichnung stoppen';
-                
                 window.addEventListener('devicemotion', handleMotion);
                 timerInterval = setInterval(updateTimer, 1000);
-                
             } else {
-                isRecording = false;
-                startBtn.textContent = 'Aufzeichnung starten';
-                
                 window.removeEventListener('devicemotion', handleMotion);
                 clearInterval(timerInterval);
-                
+                startTime = null;
+                timeDisplay.textContent = '00:00';
+            }
+        });
+
+        debugButton.addEventListener('click', () => {
+            if (!isRecording) {
+                isRecording = true;
+                sensorData = [];
+                debugButton.textContent = 'Debugging stoppen';
+            } else {
+                isRecording = false;
+                debugButton.textContent = 'Debugging starten';
                 if (sensorData.length > 0) {
                     saveRecordings(sensorData);
                 }
