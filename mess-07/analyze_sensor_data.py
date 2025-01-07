@@ -2,8 +2,6 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
-import os
-import glob
 
 def load_dataset(filename):
     with open(filename, 'r') as file:
@@ -15,36 +13,18 @@ def load_dataset(filename):
         }
 
 def analyze_multiple_datasets():
-    # Finde alle sensor_data JSON Dateien im aktuellen Verzeichnis
-    files = glob.glob('sensor_data_*.json')
+    # Liste der Dateinamen (werden durch die Debug-Funktion erstellt)
+    files = [
+        'sensor_data_sitzend_still_*.json',
+        'sensor_data_sitzend_bewegend_*.json',
+        'sensor_data_stehend_still_*.json',
+        'sensor_data_stehend_gehend_*.json'
+    ]
     
-    if not files:
-        print("Keine Sensordaten gefunden!")
-        print("Bitte erst Messungen durchführen:")
-        print("1. App öffnen")
-        print("2. 'Debugging starten' klicken")
-        print("3. Position auswählen")
-        print("4. ~70 Sekunden warten")
-        print("5. 'Debugging stoppen' klicken")
-        print("6. Für alle 4 Positionen wiederholen")
-        return
-
-    print(f"Gefundene Datendateien:")
-    for f in files:
-        print(f"- {f}")
-    print()
-
     datasets = {}
     for file in files:
-        try:
-            data = load_dataset(file)
-            datasets[data['actual_position']] = data
-        except Exception as e:
-            print(f"Fehler beim Laden von {file}: {e}")
-    
-    if not datasets:
-        print("Keine gültigen Datensätze gefunden!")
-        return
+        data = load_dataset(file)
+        datasets[data['actual_position']] = data
 
     # Plotting für alle Datensätze
     fig = plt.figure(figsize=(15, 12))
