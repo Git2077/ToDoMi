@@ -45,10 +45,33 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.length < windowSize) return false;
             
             const window = data.slice(-windowSize);
-            const avgX = window.reduce((sum, d) => sum + Math.abs(d.gravity.x), 0) / windowSize;
-            const avgY = window.reduce((sum, d) => sum + Math.abs(d.gravity.y), 0) / windowSize;
             
-            return Math.abs(avgY) > 4.0 && Math.abs(avgX) < 5.0;
+            // Berechne Durchschnitte
+            const avgY = window.reduce((sum, d) => sum + d.gravity.y, 0) / windowSize;
+            const avgZ = window.reduce((sum, d) => sum + d.gravity.z, 0) / windowSize;
+            
+            // Berechne Varianz für Bewegungserkennung
+            const varX = calculateVariance(window.map(d => d.gravity.x));
+            const varY = calculateVariance(window.map(d => d.gravity.y));
+            const varZ = calculateVariance(window.map(d => d.gravity.z));
+            
+            // Bewegungserkennung
+            const totalVariance = varX + varY + varZ;
+            const isMoving = totalVariance > 0.1;
+            
+            // Bei starker Bewegung alte Position beibehalten
+            if (isMoving && lastPosition !== null) {
+                return lastPosition;
+            }
+            
+            // Stehen: Y-Achse stark nach unten (~9.4), Z-Achse nahe 0
+            return avgY > 8.5 && Math.abs(avgZ) < 2.0;
+        }
+
+        // Hilfsfunktion für Varianzberechnung
+        function calculateVariance(values) {
+            const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+            return values.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / values.length;
         }
 
         function handleMotion(event) {
@@ -146,10 +169,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         startStopButton.addEventListener('click', () => {
-            isMeasuring = !isMeasuring;
-            startStopButton.textContent = isMeasuring ? 'Stop' : 'Start';
-            
-            if (isMeasuring) {
+            if (!isMeasuring) {
+                // Starte Messung direkt
+                isMeasuring = true;
+                startStopButton.textContent = 'Stop';
                 startTime = Date.now();
                 lastUpdate = startTime;
                 sittingSeconds = 0;
@@ -158,6 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.addEventListener('devicemotion', handleMotion);
                 timerInterval = setInterval(updateTimer, 1000);
             } else {
+                // Stop-Logik bleibt gleich
+                isMeasuring = false;
+                startStopButton.textContent = 'Start';
                 window.removeEventListener('devicemotion', handleMotion);
                 clearInterval(timerInterval);
                 startTime = null;

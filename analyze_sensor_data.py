@@ -109,14 +109,6 @@ def analyze_multiple_datasets():
     plt.show()
 
 def analyze_patterns(data, window_size=100, transition_time=5):
-    """
-    Analysiert die Sensordaten unter Ausschluss der Übergangszeiten am Anfang und Ende.
-    
-    Args:
-        data: Liste der Sensordaten
-        window_size: Größe des Analysefensters
-        transition_time: Zeit in Sekunden, die am Anfang/Ende ignoriert wird
-    """
     # Berechne Samples die übersprungen werden sollen (bei 60Hz)
     skip_samples = int(transition_time * 60)
     
@@ -139,15 +131,27 @@ def analyze_patterns(data, window_size=100, transition_time=5):
         if len(window) < window_size:
             continue
             
-        # Rest der Analyse wie gehabt...
-        variance_x = np.var([d['gravity']['x'] for d in window])
-        variance_y = np.var([d['gravity']['y'] for d in window])
-        variance_z = np.var([d['gravity']['z'] for d in window])
+        # Extrahiere x,y,z Werte aus gravity
+        gravity_x = [d['gravity']['x'] for d in window]
+        gravity_y = [d['gravity']['y'] for d in window]
+        gravity_z = [d['gravity']['z'] for d in window]
         
-        frequencies_x = np.fft.fft([d['gravity']['x'] for d in window])
+        # Berechne Varianz für jede Achse
+        variance_x = np.var(gravity_x)
+        variance_y = np.var(gravity_y)
+        variance_z = np.var(gravity_z)
         
-        mean_orientation = np.mean([d['gravity'] for d in window], axis=0)
+        # Frequenzanalyse
+        frequencies_x = np.fft.fft(gravity_x)
         
+        # Durchschnittliche Orientierung als Array [x,y,z]
+        mean_orientation = [
+            np.mean(gravity_x),
+            np.mean(gravity_y),
+            np.mean(gravity_z)
+        ]
+        
+        # Bewegungserkennung
         movement = 'moving' if max(variance_x, variance_y, variance_z) > 0.1 else 'still'
         
         patterns['variance'].append([variance_x, variance_y, variance_z])
