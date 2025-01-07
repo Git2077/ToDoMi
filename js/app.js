@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let lastUpdate = null;
         let lastPosition = null;
         let measurementData = [];
+        let currentActivity = null;
 
         const startStopButton = document.getElementById('startStopButton');
         const debugButton = document.getElementById('startRecording');
@@ -167,8 +168,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        debugButton.addEventListener('click', () => {
+        async function selectPosition() {
+            const position = prompt(
+                'Position für diese Aufnahme:\n' +
+                '1: Sitzend still\n' +
+                '2: Sitzend bewegend\n' +
+                '3: Stehend still\n' +
+                '4: Stehend gehend\n' +
+                'Bitte Nummer eingeben:'
+            );
+
+            const activities = {
+                '1': 'sitzend_still',
+                '2': 'sitzend_bewegend',
+                '3': 'stehend_still',
+                '4': 'stehend_gehend'
+            };
+
+            return activities[position] || null;
+        }
+
+        debugButton.addEventListener('click', async () => {
             if (!isRecording) {
+                currentActivity = await selectPosition();
+                if (!currentActivity) {
+                    alert('Bitte eine gültige Position wählen!');
+                    return;
+                }
                 isRecording = true;
                 sensorData = [];
                 debugButton.textContent = 'Debugging stoppen';
@@ -176,23 +202,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 isRecording = false;
                 debugButton.textContent = 'Debugging starten';
                 if (sensorData.length > 0) {
-                    saveRecordings(sensorData);
+                    const metadata = {
+                        detected_position: document.getElementById('standingStatus').textContent,
+                        actual_position: currentActivity,
+                        location: 'hosentasche_hinten_rechts',
+                        data: sensorData
+                    };
+                    
+                    const filename = `sensor_data_${metadata.actual_position}_${new Date().toISOString().replace(/:/g, '_')}.json`;
+                    const blob = new Blob([JSON.stringify(metadata, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.click();
+                    
+                    URL.revokeObjectURL(url);
                 }
             }
         });
-    }
-
-    function saveRecordings(data) {
-        const filename = `sensor_data_${new Date().toISOString().replace(/:/g, '_')}.json`;
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        
-        URL.revokeObjectURL(url);
     }
 
     if (!window.DeviceMotionEvent) {
