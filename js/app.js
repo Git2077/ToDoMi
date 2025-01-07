@@ -25,6 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let sittingSeconds = 0;
         let standingSeconds = 0;
         let lastUpdate = null;
+        let lastPosition = null;
+        let measurementData = [];
 
         const startStopButton = document.getElementById('startStopButton');
         const debugButton = document.getElementById('startRecording');
@@ -73,11 +75,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
 
-            if (isRecording) {
-                sensorData.push(data);
+            measurementData.push(data);
+            if (measurementData.length > 20) {
+                measurementData = measurementData.slice(-20);
             }
 
-            const isStanding = detectStandingByOrientation(sensorData);
+            if (isRecording) {
+                sensorData.push(data);
+                if (sensorData.length > 18000) {
+                    sensorData = sensorData.slice(-18000);
+                }
+            }
+
+            const isStanding = detectStandingByOrientation(measurementData);
+            lastPosition = isStanding;
+            
             document.getElementById('standingStatus').textContent = 
                 isStanding ? 'Stehend' : 'Sitzend';
 
@@ -104,13 +116,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function updatePositionTimes() {
-            if (!isRecording || !lastUpdate) return;
+            if (!isMeasuring || !lastUpdate || lastPosition === null) return;
             
             const now = Date.now();
             const delta = (now - lastUpdate) / 1000;
-            const isStanding = detectStandingByOrientation(sensorData);
             
-            if (isStanding) {
+            if (lastPosition) {
                 standingSeconds += delta;
             } else {
                 sittingSeconds += delta;
@@ -134,12 +145,19 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (isMeasuring) {
                 startTime = Date.now();
+                lastUpdate = startTime;
+                sittingSeconds = 0;
+                standingSeconds = 0;
+                measurementData = [];
                 window.addEventListener('devicemotion', handleMotion);
                 timerInterval = setInterval(updateTimer, 1000);
             } else {
                 window.removeEventListener('devicemotion', handleMotion);
                 clearInterval(timerInterval);
                 startTime = null;
+                lastUpdate = null;
+                lastPosition = null;
+                measurementData = [];
                 timeDisplay.textContent = '00:00';
             }
         });
