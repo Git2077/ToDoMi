@@ -82,3 +82,11 @@ button:hover {
     background-color: #f5f5f5;
     border-radius: 4px;
 }
+
+.version-info {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 2rem;
+    padding-bottom: 1rem;
+}

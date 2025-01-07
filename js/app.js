@@ -176,4 +176,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initSensors();
+
+    const deploymentDate = new Date().toLocaleString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    document.querySelector('.version-info').textContent = `Version deployed: ${deploymentDate}`;
 });
