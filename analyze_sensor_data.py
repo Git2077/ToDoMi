@@ -61,6 +61,7 @@ def analyze_multiple_datasets():
         dominant_freq = np.argmax(frequencies[1:]) + 1
         print(f"Dominante Frequenz: {dominant_freq} Hz")
 
+    suggest_detection_algorithm(datasets)
     plt.show()
 
 def analyze_patterns(data, window_size=100):
@@ -94,6 +95,65 @@ def analyze_patterns(data, window_size=100):
         patterns['movement'].append(movement)
     
     return patterns
+
+def suggest_detection_algorithm(datasets):
+    print("\nAnalyse für verbesserten Erkennungsalgorithmus:")
+    print("---------------------------------------------")
+    
+    # Analysiere charakteristische Merkmale jeder Position
+    position_characteristics = {}
+    
+    for position, data in datasets.items():
+        patterns = analyze_patterns(data['data'])
+        
+        # Berechne durchschnittliche Merkmale
+        avg_variance = np.mean(patterns['variance'], axis=0)
+        avg_orientation = np.mean(patterns['orientation'], axis=0)
+        movement_ratio = sum(1 for m in patterns['movement'] if m == 'moving') / len(patterns['movement'])
+        
+        position_characteristics[position] = {
+            'variance': avg_variance,
+            'orientation': avg_orientation,
+            'movement_ratio': movement_ratio
+        }
+        
+        print(f"\nPosition: {position}")
+        print(f"Durchschnittliche Varianz (X,Y,Z): {avg_variance}")
+        print(f"Durchschnittliche Orientierung: {avg_orientation}")
+        print(f"Bewegungsanteil: {movement_ratio:.2%}")
+    
+    # Vorschlag für verbesserten Algorithmus
+    print("\nVorgeschlagener verbesserter Algorithmus:")
+    print("----------------------------------------")
+    print("function detectPosition(data, windowSize = 20) {")
+    print("    const window = data.slice(-windowSize);")
+    print("    ")
+    print("    // Berechne Varianz")
+    print("    const varX = calculateVariance(window.map(d => d.gravity.x));")
+    print("    const varY = calculateVariance(window.map(d => d.gravity.y));")
+    print("    const varZ = calculateVariance(window.map(d => d.gravity.z));")
+    print("    ")
+    print("    // Berechne durchschnittliche Orientierung")
+    print("    const avgX = average(window.map(d => Math.abs(d.gravity.x)));")
+    print("    const avgY = average(window.map(d => Math.abs(d.gravity.y)));")
+    print("    const avgZ = average(window.map(d => Math.abs(d.gravity.z)));")
+    print("    ")
+    print("    // Bewegungserkennung")
+    print("    const isMoving = (varX + varY + varZ) > 0.1;")
+    print("    ")
+    print("    // Positionserkennung basierend auf den Analysen")
+    if len(position_characteristics) >= 4:
+        sit_vars = position_characteristics['sitzend_still']['variance']
+        stand_vars = position_characteristics['stehend_still']['variance']
+        print(f"    // Schwellenwerte basierend auf Analyse:")
+        print(f"    // Sitzen: Varianz ~{sit_vars}")
+        print(f"    // Stehen: Varianz ~{stand_vars}")
+    
+    print("    return {")
+    print("        isStanding: detectStanding(avgX, avgY, avgZ, varX, varY, varZ),")
+    print("        isMoving: isMoving")
+    print("    };")
+    print("}")
 
 # Hauptausführung
 if __name__ == "__main__":
