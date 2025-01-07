@@ -21,6 +21,20 @@ h1 {
     margin-bottom: 2rem;
 }
 
+.status-container {
+    margin: 20px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+#standingStatus {
+    font-weight: bold;
+    color: #2196F3;
+}
+
 .sensor-status {
     background: #fff;
     padding: 1rem;
@@ -50,29 +64,21 @@ button:hover {
     background-color: #45a049;
 }
 
-#sensorGraph {
-    width: 100%;
-    height: 200px;
-    background: #f5f5f5;
-    border-radius: 4px;
-    margin: 1rem 0;
-}
-
 .sensor-values {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
 }
 
-.status-container {
-    margin: 20px;
-    padding: 15px;
-    background-color: #f5f5f5;
-    border-radius: 8px;
-    text-align: center;
+.time-stats {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-around;
+    font-size: 0.9rem;
 }
 
-#standingStatus {
-    font-weight: bold;
-    color: #2196F3;
+.time-stats p {
+    padding: 5px 15px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
 }

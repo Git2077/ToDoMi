@@ -20,21 +20,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let isRecording = false;
         let sensorData = [];
         let startTime = null;
-        let graphUpdateInterval = null;
         let timerInterval = null;
+        let sittingSeconds = 0;
+        let standingSeconds = 0;
+        let lastUpdate = null;
 
         const startBtn = document.getElementById('startRecording');
         const timeDisplay = document.getElementById('recordingTime');
-        const canvas = document.getElementById('sensorGraph');
-        const ctx = canvas.getContext('2d');
-
-        // Canvas-Größe anpassen
-        function resizeCanvas() {
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
 
         function updateTimer() {
             if (!startTime) return;
@@ -51,13 +43,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const avgX = window.reduce((sum, d) => sum + Math.abs(d.gravity.x), 0) / windowSize;
             const avgY = window.reduce((sum, d) => sum + Math.abs(d.gravity.y), 0) / windowSize;
             
-            return Math.abs(avgY) > 6.0 && Math.abs(avgX) < 5.0;
+            return Math.abs(avgY) > 4.0 && Math.abs(avgX) < 5.0;
         }
 
         function handleMotion(event) {
             if (!isRecording) return;
 
             const timestamp = Date.now();
+            lastUpdate = lastUpdate || timestamp;
             
             if (!event.accelerationIncludingGravity) {
                 console.error('Keine Gravity-Daten verfügbar');
@@ -89,6 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (sensorData.length > 100) {
                 sensorData = sensorData.slice(-100);
             }
+
+            updatePositionTimes();
         }
 
         function updateDisplay(data) {
@@ -109,47 +104,42 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
-        function updateGraph() {
-            if (!sensorData.length) return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function updatePositionTimes() {
+            if (!isRecording || !lastUpdate) return;
             
-            // Raster zeichnen
-            ctx.strokeStyle = '#eee';
-            ctx.lineWidth = 1;
-            for (let i = 0; i < canvas.height; i += 20) {
-                ctx.beginPath();
-                ctx.moveTo(0, i);
-                ctx.lineTo(canvas.width, i);
-                ctx.stroke();
+            const now = Date.now();
+            const delta = (now - lastUpdate) / 1000;
+            const isStanding = detectStandingByOrientation(sensorData);
+            
+            if (isStanding) {
+                standingSeconds += delta;
+            } else {
+                sittingSeconds += delta;
             }
+            
+            lastUpdate = now;
+            
+            document.getElementById('sittingTime').textContent = formatTime(sittingSeconds);
+            document.getElementById('standingTime').textContent = formatTime(standingSeconds);
+        }
 
-            // Daten zeichnen
-            ['x', 'y', 'z'].forEach((axis, index) => {
-                const colors = ['#f44336', '#4CAF50', '#2196F3'];
-                ctx.beginPath();
-                ctx.strokeStyle = colors[index];
-                ctx.lineWidth = 2;
-                
-                sensorData.forEach((data, i) => {
-                    const x = (i / sensorData.length) * canvas.width;
-                    const y = canvas.height / 2 - data.gravity[axis] * 10;
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                });
-                ctx.stroke();
-            });
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
         }
 
         startBtn.addEventListener('click', () => {
             if (!isRecording) {
                 isRecording = true;
                 startTime = Date.now();
+                lastUpdate = startTime;
                 sensorData = [];
+                sittingSeconds = 0;
+                standingSeconds = 0;
                 startBtn.textContent = 'Aufzeichnung stoppen';
                 
                 window.addEventListener('devicemotion', handleMotion);
-                graphUpdateInterval = setInterval(updateGraph, 100);
                 timerInterval = setInterval(updateTimer, 1000);
                 
             } else {
@@ -157,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 startBtn.textContent = 'Aufzeichnung starten';
                 
                 window.removeEventListener('devicemotion', handleMotion);
-                clearInterval(graphUpdateInterval);
                 clearInterval(timerInterval);
                 
                 if (sensorData.length > 0) {
