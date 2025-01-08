@@ -46,6 +46,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const window = data.slice(-windowSize);
             
+            // Debug-Ausgabe
+            console.log('Aktuelle Werte:', {
+                avgX: window.reduce((sum, d) => sum + d.gravity.x, 0) / windowSize,
+                avgY: window.reduce((sum, d) => sum + d.gravity.y, 0) / windowSize,
+                avgZ: window.reduce((sum, d) => sum + d.gravity.z, 0) / windowSize
+            });
+            
             // Berechne Durchschnitte
             const avgY = window.reduce((sum, d) => sum + d.gravity.y, 0) / windowSize;
             const avgZ = window.reduce((sum, d) => sum + d.gravity.z, 0) / windowSize;
@@ -59,13 +66,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const totalVariance = varX + varY + varZ;
             const isMoving = totalVariance > 0.1;
             
-            // Bei starker Bewegung alte Position beibehalten
             if (isMoving && lastPosition !== null) {
                 return lastPosition;
             }
             
-            // Stehen: Y-Achse stark nach unten (~9.4), Z-Achse nahe 0
-            return avgY > 8.5 && Math.abs(avgZ) < 2.0;
+            // iOS hat möglicherweise andere Werte
+            // Wir müssen die absoluten Werte betrachten
+            const absY = Math.abs(avgY);
+            const absZ = Math.abs(avgZ);
+            
+            // Stehen: Y-Achse stark (> 8.5), Z-Achse schwach (< 2.0)
+            return absY > 8.5 && absZ < 2.0;
         }
 
         // Hilfsfunktion für Varianzberechnung
