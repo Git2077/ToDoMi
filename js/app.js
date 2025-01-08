@@ -97,11 +97,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return lastPosition;
             }
             
+            // Neue Schwellenwerte basierend auf den Messdaten
             const absY = Math.abs(avgY);
             const absZ = Math.abs(avgZ);
             
-            // Angepasste Schwellenwerte basierend auf iOS-Werten
-            return absY > 8.5 && absZ < 2.0;
+            // Stehen: Y > 8.0 (war 8.5) UND |Z| < 3.0 (war 2.0)
+            return absY > 8.0 && absZ < 3.0;
         }
 
         // Hilfsfunktion für Varianzberechnung
