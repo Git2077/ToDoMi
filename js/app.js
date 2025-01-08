@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let lastPosition = null;
         let measurementData = [];
         let currentActivity = null;
+        let audioCtx = null;
 
         const startStopButton = document.getElementById('startStopButton');
         const debugButton = document.getElementById('startRecording');
@@ -204,6 +205,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return `${mins}:${secs}`;
         }
 
+        function playBeep() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 880; // A5 Note
+                gainNode.gain.value = 1;
+                
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                    showDebug('65 Sekunden Messung abgeschlossen');
+                }, 500);
+            } catch (error) {
+                console.error('Audio-Fehler:', error);
+                showDebug('Audio-Fehler: ' + error.message);
+            }
+        }
+
         startStopButton.addEventListener('click', () => {
             if (!isMeasuring) {
                 // Starte Messung direkt
@@ -261,28 +288,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 sensorData = [];
                 debugButton.textContent = 'Debugging stoppen';
                 
-                // Timer für Ton nach 65 Sekunden
-                setTimeout(() => {
-                    // Erzeuge einen Piepton
-                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioCtx.createOscillator();
-                    const gainNode = audioCtx.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
-                    
-                    oscillator.type = 'sine';
-                    oscillator.frequency.value = 880; // A5 Note
-                    gainNode.gain.value = 1;
-                    
-                    oscillator.start();
-                    // Ton nach 0.5 Sekunden stoppen
-                    setTimeout(() => {
-                        oscillator.stop();
-                        showDebug('65 Sekunden Messung abgeschlossen');
-                    }, 500);
-                    
-                }, 65000);
+                // Audio-Kontext initialisieren
+                try {
+                    if (!audioCtx) {
+                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+                } catch (error) {
+                    console.error('Audio-Initialisierung fehlgeschlagen:', error);
+                }
+                
+                // Timer für Ton
+                setTimeout(playBeep, 65000);
                 
             } else {
                 isRecording = false;
