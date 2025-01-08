@@ -46,16 +46,29 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const window = data.slice(-windowSize);
             
-            // Debug-Ausgabe
-            console.log('Aktuelle Werte:', {
-                avgX: window.reduce((sum, d) => sum + d.gravity.x, 0) / windowSize,
-                avgY: window.reduce((sum, d) => sum + d.gravity.y, 0) / windowSize,
-                avgZ: window.reduce((sum, d) => sum + d.gravity.z, 0) / windowSize
-            });
-            
             // Berechne Durchschnitte
+            const avgX = window.reduce((sum, d) => sum + d.gravity.x, 0) / windowSize;
             const avgY = window.reduce((sum, d) => sum + d.gravity.y, 0) / windowSize;
             const avgZ = window.reduce((sum, d) => sum + d.gravity.z, 0) / windowSize;
+            
+            // Ausführlichere Debug-Ausgabe
+            console.log('Position Detection:', {
+                raw: { x: avgX, y: avgY, z: avgZ },
+                abs: { 
+                    x: Math.abs(avgX), 
+                    y: Math.abs(avgY), 
+                    z: Math.abs(avgZ) 
+                },
+                variance: {
+                    x: calculateVariance(window.map(d => d.gravity.x)),
+                    y: calculateVariance(window.map(d => d.gravity.y)),
+                    z: calculateVariance(window.map(d => d.gravity.z))
+                },
+                decision: {
+                    absY: Math.abs(avgY) > 8.5,
+                    absZ: Math.abs(avgZ) < 2.0
+                }
+            });
             
             // Berechne Varianz für Bewegungserkennung
             const varX = calculateVariance(window.map(d => d.gravity.x));
@@ -70,12 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return lastPosition;
             }
             
-            // iOS hat möglicherweise andere Werte
-            // Wir müssen die absoluten Werte betrachten
             const absY = Math.abs(avgY);
             const absZ = Math.abs(avgZ);
             
-            // Stehen: Y-Achse stark (> 8.5), Z-Achse schwach (< 2.0)
+            // Angepasste Schwellenwerte basierend auf iOS-Werten
             return absY > 8.5 && absZ < 2.0;
         }
 
@@ -116,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (isRecording) {
+                console.log('Recording data point');
                 sensorData.push(data);
                 if (sensorData.length > 18000) {
                     sensorData = sensorData.slice(-18000);
@@ -235,10 +247,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 isRecording = true;
                 sensorData = [];
                 debugButton.textContent = 'Debugging stoppen';
+                console.log('Debug-Aufzeichnung gestartet');
             } else {
                 isRecording = false;
                 debugButton.textContent = 'Debugging starten';
+                console.log('Aufgezeichnete Daten:', sensorData.length);
+                
                 if (sensorData.length > 0) {
+                    console.log('Erstelle JSON...');
                     const metadata = {
                         detected_position: document.getElementById('standingStatus').textContent,
                         actual_position: currentActivity,
@@ -246,16 +262,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         data: sensorData
                     };
                     
-                    const filename = `sensor_data_${metadata.actual_position}_${new Date().toISOString().replace(/:/g, '_')}.json`;
-                    const blob = new Blob([JSON.stringify(metadata, null, 2)], {type: 'application/json'});
-                    const url = URL.createObjectURL(blob);
-                    
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    a.click();
-                    
-                    URL.revokeObjectURL(url);
+                    try {
+                        const filename = `sensor_data_${metadata.actual_position}_${new Date().toISOString().replace(/:/g, '_')}.json`;
+                        const blob = new Blob([JSON.stringify(metadata, null, 2)], {type: 'application/json'});
+                        const url = URL.createObjectURL(blob);
+                        
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        console.log('Starte Download...');
+                        a.click();
+                        
+                        URL.revokeObjectURL(url);
+                        console.log('Download initiiert');
+                    } catch (error) {
+                        console.error('Fehler beim Speichern:', error);
+                        alert('Fehler beim Speichern der Daten: ' + error.message);
+                    }
+                } else {
+                    console.warn('Keine Daten aufgezeichnet!');
+                    alert('Keine Daten aufgezeichnet!');
                 }
             }
         });
