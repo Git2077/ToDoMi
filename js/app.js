@@ -1,4 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
+    function addDebugDisplay() {
+        const debugDiv = document.createElement('div');
+        debugDiv.id = 'debug-output';
+        debugDiv.style.cssText = 'padding: 10px; font-size: 12px; background: #f0f0f0; margin-top: 20px; word-wrap: break-word;';
+        document.querySelector('.container').appendChild(debugDiv);
+    }
+
+    function showDebug(message) {
+        const debugDiv = document.getElementById('debug-output');
+        const time = new Date().toLocaleTimeString();
+        debugDiv.innerHTML = `${time}: ${message}<br>` + debugDiv.innerHTML;
+    }
+
     function initSensors() {
         if (typeof DeviceOrientationEvent.requestPermission === 'function') {
             document.body.addEventListener('click', async () => {
@@ -127,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (isRecording) {
-                console.log('Recording data point');
+                showDebug('Recording data point');
                 sensorData.push(data);
                 if (sensorData.length > 18000) {
                     sensorData = sensorData.slice(-18000);
@@ -247,7 +260,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 isRecording = true;
                 sensorData = [];
                 debugButton.textContent = 'Debugging stoppen';
-                console.log('Debug-Aufzeichnung gestartet');
+                
+                // Timer für Ton nach 65 Sekunden
+                setTimeout(() => {
+                    // Erzeuge einen Piepton
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    oscillator.type = 'sine';
+                    oscillator.frequency.value = 880; // A5 Note
+                    gainNode.gain.value = 1;
+                    
+                    oscillator.start();
+                    // Ton nach 0.5 Sekunden stoppen
+                    setTimeout(() => {
+                        oscillator.stop();
+                        showDebug('65 Sekunden Messung abgeschlossen');
+                    }, 500);
+                    
+                }, 65000);
+                
             } else {
                 isRecording = false;
                 debugButton.textContent = 'Debugging starten';
